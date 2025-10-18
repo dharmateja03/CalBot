@@ -6,6 +6,8 @@ Handles task scheduling logic and recurring task generation
 from datetime import datetime, timedelta
 from typing import Dict, List, Optional
 from app.services.calendar_service import GoogleCalendarService, find_best_time_slot
+import pytz
+import os
 
 
 class TaskScheduler:
@@ -23,7 +25,8 @@ class TaskScheduler:
     def schedule_task(
         self,
         task_data: Dict,
-        user_preferences: Optional[Dict] = None
+        user_preferences: Optional[Dict] = None,
+        user_timezone: Optional[str] = None
     ) -> Dict:
         """
         Schedule a single task or generate recurring tasks
@@ -31,6 +34,7 @@ class TaskScheduler:
         Args:
             task_data: Parsed task information
             user_preferences: User's scheduling preferences
+            user_timezone: User's timezone (optional, overrides preferences)
 
         Returns:
             Scheduling result with created events
@@ -42,19 +46,23 @@ class TaskScheduler:
                 "work_hours_end": "17:00",
                 "break_start": "12:00",
                 "break_end": "13:00",
-                "timezone": "UTC"
+                "timezone": user_timezone or "UTC"
             }
+        elif user_timezone:
+            # Override timezone from preferences with user_timezone if provided
+            user_preferences["timezone"] = user_timezone
 
         # Check if recurring
         if task_data.get("recurring"):
-            return self._schedule_recurring_task(task_data, user_preferences)
+            return self._schedule_recurring_task(task_data, user_preferences, user_timezone)
         else:
-            return self._schedule_single_task(task_data, user_preferences)
+            return self._schedule_single_task(task_data, user_preferences, user_timezone)
 
     def _schedule_single_task(
         self,
         task_data: Dict,
-        user_preferences: Dict
+        user_preferences: Dict,
+        user_timezone: Optional[str] = None
     ) -> Dict:
         """Schedule a single non-recurring task"""
 
@@ -134,10 +142,16 @@ class TaskScheduler:
                 pass
 
         # Determine search range for finding available slots
-        start_date = datetime.now()
+        # Use timezone-aware datetime from user's browser
+        tz_name = user_timezone or user_preferences.get("timezone") or os.getenv("TIMEZONE", "UTC")
+        tz = pytz.timezone(tz_name)
+        start_date = datetime.now(tz)
         if deadline:
             try:
                 end_date = datetime.fromisoformat(deadline)
+                # Make timezone-aware if it isn't already
+                if end_date.tzinfo is None:
+                    end_date = tz.localize(end_date)
             except:
                 end_date = start_date + timedelta(days=7)
         else:
@@ -187,7 +201,8 @@ class TaskScheduler:
     def _schedule_recurring_task(
         self,
         task_data: Dict,
-        user_preferences: Dict
+        user_preferences: Dict,
+        user_timezone: Optional[str] = None
     ) -> Dict:
         """Schedule recurring tasks"""
 
@@ -198,7 +213,10 @@ class TaskScheduler:
         preferred_time = task_data.get("preferred_time")
 
         events_created = []
-        start_date = datetime.now()
+        # Use timezone-aware datetime from user's browser
+        tz_name = user_timezone or user_preferences.get("timezone") or os.getenv("TIMEZONE", "UTC")
+        tz = pytz.timezone(tz_name)
+        start_date = datetime.now(tz)
 
         # Generate occurrence dates based on pattern
         occurrence_dates = self._generate_occurrence_dates(
