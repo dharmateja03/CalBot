@@ -1,0 +1,8 @@
+export interface CalendarEvent {
+  id: string;
+  title: string;
+  start: Date;
+  end: Date;
+  description?: string;
+  priority?: "high" | "medium" | "low";
+}

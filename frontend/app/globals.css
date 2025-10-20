@@ -1,0 +1,261 @@
+@import "tailwindcss";
+
+:root {
+  /* Dark Theme Colors */
+  --background: #0E0E11;
+  --foreground: #EDEDED;
+  --surface: #1A1A1D;
+  --border: #2A2A2F;
+
+  /* Event Colors */
+  --event-course: #D65D8C;
+  --event-meditation: #3CB76D;
+  --event-reading: #D98A34;
+  --event-report: #A2D239;
+  --event-running: #D7C548;
+  --event-deepwork: #2CB5B1;
+
+  /* Accent Colors */
+  --accent-cyan: #2EE9E2;
+  --accent-red: #B32B2B;
+  --text-muted: #A3A3A3;
+  --text-dimmed: #242427;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+  margin: 0;
+  padding: 0;
+}
+
+/* React Big Calendar Overrides - Dark Modern Theme */
+.rbc-calendar {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  background: var(--background);
+  color: var(--foreground);
+}
+
+.rbc-header {
+  padding: 16px 8px;
+  font-weight: 600;
+  font-size: 13px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  border-bottom: 1px solid var(--border);
+  background-color: var(--background);
+}
+
+.rbc-today {
+  background-color: rgba(46, 233, 226, 0.08);
+}
+
+.rbc-off-range-bg {
+  background-color: rgba(255, 255, 255, 0.02);
+}
+
+.rbc-event {
+  padding: 8px 12px;
+  font-size: 15px;
+  font-weight: 500;
+  cursor: pointer;
+  border-radius: 12px;
+  border: none !important;
+  opacity: 0.95;
+  backdrop-filter: blur(10px);
+  transition: all 0.2s ease;
+}
+
+.rbc-event:hover {
+  opacity: 1 !important;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.rbc-event-label {
+  display: none;
+}
+
+.rbc-time-slot {
+  min-height: 60px;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.rbc-time-header-content {
+  border-left: none;
+  border-bottom: 2px solid var(--border);
+}
+
+.rbc-time-content {
+  border-top: 2px solid var(--border);
+  background: var(--background);
+}
+
+.rbc-day-slot .rbc-time-slot {
+  border-top: 1px solid rgba(255, 255, 255, 0.03);
+}
+
+.rbc-current-time-indicator {
+  background-color: var(--accent-cyan);
+  height: 3px;
+  box-shadow: 0 0 8px var(--accent-cyan);
+}
+
+.rbc-timeslot-group {
+  min-height: 60px;
+  border-left: 1px solid var(--border);
+}
+
+.rbc-day-bg + .rbc-day-bg {
+  border-left: 1px solid var(--border);
+}
+
+.rbc-time-header {
+  background: var(--background);
+}
+
+.rbc-time-gutter {
+  background: var(--background);
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
+.rbc-label {
+  color: var(--text-muted);
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.rbc-month-view {
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  overflow: hidden;
+  background: var(--background);
+}
+
+.rbc-month-row {
+  border-color: var(--border);
+}
+
+.rbc-date-cell {
+  padding: 6px;
+  color: var(--foreground);
+}
+
+.rbc-button-link {
+  font-size: 13px;
+  color: var(--foreground);
+}
+
+.rbc-show-more {
+  color: var(--accent-cyan);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.rbc-toolbar {
+  padding: 20px 24px;
+  background: var(--background);
+  border-bottom: 1px solid var(--border);
+}
+
+.rbc-toolbar button {
+  color: var(--foreground);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 8px 16px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.rbc-toolbar button:hover {
+  background: rgba(46, 233, 226, 0.1);
+  border-color: var(--accent-cyan);
+}
+
+.rbc-toolbar button.rbc-active {
+  background: var(--accent-cyan);
+  color: var(--background);
+  border-color: var(--accent-cyan);
+}
+
+/* Event Priority Colors */
+.rbc-event.priority-high {
+  background: linear-gradient(135deg, var(--event-deepwork) 0%, rgba(44, 181, 177, 0.9) 100%);
+  color: white;
+}
+
+.rbc-event.priority-medium {
+  background: linear-gradient(135deg, var(--event-course) 0%, rgba(214, 93, 140, 0.9) 100%);
+  color: white;
+}
+
+.rbc-event.priority-low {
+  background: linear-gradient(135deg, var(--event-meditation) 0%, rgba(60, 183, 109, 0.9) 100%);
+  color: white;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--background);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 6px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--text-dimmed);
+}
+
+/* Animation delays for loading dots */
+@keyframes bounce {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-4px);
+  }
+}
+
+.animate-bounce {
+  animation: bounce 0.6s infinite;
+}
+
+.delay-100 {
+  animation-delay: 0.1s;
+}
+
+.delay-200 {
+  animation-delay: 0.2s;
+}
+
+/* Glow effect for active elements */
+@keyframes glow {
+  0%, 100% {
+    box-shadow: 0 0 8px var(--accent-cyan);
+  }
+  50% {
+    box-shadow: 0 0 16px var(--accent-cyan);
+  }
+}
+
+.glow-active {
+  animation: glow 2s ease-in-out infinite;
+}
