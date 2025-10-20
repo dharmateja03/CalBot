@@ -22,6 +22,36 @@ class TaskScheduler:
         """
         self.calendar = calendar_service
 
+    def _check_conflicts(self, start_time: datetime, end_time: datetime) -> List[Dict]:
+        """
+        Check if there are any conflicting events in the calendar
+
+        Args:
+            start_time: Proposed event start time
+            end_time: Proposed event end time
+
+        Returns:
+            List of conflicting events
+        """
+        try:
+            # Get events in the proposed time range
+            existing_events = self.calendar.get_events(start_time, end_time)
+
+            # Filter for actual conflicts (overlapping times)
+            conflicts = []
+            for event in existing_events:
+                event_start = datetime.fromisoformat(event["start"])
+                event_end = datetime.fromisoformat(event["end"])
+
+                # Check if times overlap
+                if (start_time < event_end and end_time > event_start):
+                    conflicts.append(event)
+
+            return conflicts
+        except Exception as e:
+            print(f"Error checking conflicts: {e}")
+            return []
+
     def schedule_task(
         self,
         task_data: Dict,
@@ -71,6 +101,106 @@ class TaskScheduler:
         priority = task_data.get("priority", "medium")
         preferred_time = task_data.get("preferred_time")
         deadline = task_data.get("deadline")
+
+        # Check if user specified exact time (like "5pm today" or "10pm today")
+        # First, try to parse preferred_time as a specific time
+        if preferred_time:
+            try:
+                # Parse time in various formats: "13:00", "1pm", "1:30pm", "5pm", "10pm"
+                time_str = str(preferred_time).lower().strip()
+
+                # Check for am/pm format
+                is_pm = 'pm' in time_str
+                is_am = 'am' in time_str
+                time_str = time_str.replace('am', '').replace('pm', '').strip()
+
+                # Parse hour and minute
+                if ":" in time_str:
+                    time_parts = time_str.split(":")
+                    hour = int(time_parts[0])
+                    minute = int(time_parts[1]) if len(time_parts) > 1 else 0
+                else:
+                    # Just a number like "5" or "10"
+                    hour = int(time_str)
+                    minute = 0
+
+                # Convert to 24-hour format if pm/am specified
+                if is_pm and hour < 12:
+                    hour += 12
+                elif is_am and hour == 12:
+                    hour = 0
+
+                # Determine the target date
+                tz_name = user_timezone or user_preferences.get("timezone") or os.getenv("TIMEZONE", "UTC")
+                tz = pytz.timezone(tz_name)
+
+                if deadline:
+                    try:
+                        # If deadline is specified, use it as the date
+                        if isinstance(deadline, str) and ('today' in deadline.lower() or 'tomorrow' in deadline.lower()):
+                            base_date = datetime.now(tz)
+                            if 'tomorrow' in deadline.lower():
+                                base_date = base_date + timedelta(days=1)
+                        else:
+                            base_date = datetime.fromisoformat(deadline)
+                            if base_date.tzinfo is None:
+                                base_date = tz.localize(base_date)
+                    except:
+                        base_date = datetime.now(tz)
+                else:
+                    base_date = datetime.now(tz)
+
+                # Create start time with proper timezone
+                # Make sure base_date has timezone info
+                if base_date.tzinfo is None:
+                    base_date = tz.localize(base_date)
+
+                start_time = base_date.replace(hour=hour, minute=minute, second=0, microsecond=0)
+
+                # If the time has already passed today, schedule for tomorrow
+                if start_time < datetime.now(tz):
+                    start_time = start_time + timedelta(days=1)
+
+                # Calculate end time based on duration
+                end_time = start_time + timedelta(minutes=duration)
+
+                print(f"DEBUG: Scheduling at specific time: {start_time} to {end_time} (timezone: {start_time.tzinfo})")
+
+                # Check for conflicts
+                conflicts = self._check_conflicts(start_time, end_time)
+                if conflicts:
+                    conflict_titles = [c.get("title", "Untitled") for c in conflicts]
+                    return {
+                        "success": False,
+                        "has_conflict": True,
+                        "conflicts": conflicts,
+                        "proposed_event": {
+                            "title": title,
+                            "start_time": start_time.isoformat(),
+                            "end_time": end_time.isoformat()
+                        },
+                        "message": f"⚠️ Time conflict detected! You have '{conflict_titles[0]}' at that time. Do you still want to add '{title}'?"
+                    }
+
+                # Create the event at the specific time
+                event = self.calendar.create_event(
+                    title=title,
+                    start_time=start_time,
+                    end_time=end_time,
+                    description=f"Priority: {priority}\nScheduled by CalBot"
+                )
+
+                return {
+                    "success": True,
+                    "event": event,
+                    "message": f"Scheduled '{title}' for {start_time.strftime('%b %d at %I:%M %p')}"
+                }
+            except (ValueError, TypeError) as e:
+                # Not a specific time, fall through to normal scheduling
+                print(f"DEBUG: Could not parse preferred_time as specific time: {e}")
+                import traceback
+                traceback.print_exc()
+                pass
 
         # Check if user specified exact start and end times
         # Claude may put start time in preferred_time and end time in deadline
