@@ -1,0 +1,67 @@
+version: '3.8'
+
+services:
+  # Backend Service (Development)
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: calbot-backend-dev
+    ports:
+      - "8000:8000"
+    environment:
+      # Database
+      - SUPABASE_URL=${SUPABASE_URL}
+      - SUPABASE_SERVICE_KEY=${SUPABASE_SERVICE_KEY}
+
+      # Google OAuth
+      - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
+      - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
+      - GOOGLE_REDIRECT_URI=${GOOGLE_REDIRECT_URI:-http://localhost:8000/auth/google/callback}
+
+      # Security
+      - SECRET_KEY=${SECRET_KEY}
+
+      # Claude API
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+
+      # App Config
+      - FRONTEND_URL=${FRONTEND_URL:-http://localhost:3000}
+      - TIMEZONE=${TIMEZONE:-UTC}
+    volumes:
+      # Mount source code for hot reload
+      - ./backend:/app
+      - backend_cache:/root/.cache
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+    restart: unless-stopped
+    networks:
+      - calbot-network
+
+  # Frontend Service (Development)
+  frontend:
+    image: node:18-alpine
+    container_name: calbot-frontend-dev
+    working_dir: /app
+    ports:
+      - "3000:3000"
+    environment:
+      - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL:-http://localhost:8000}
+      - NODE_ENV=development
+    volumes:
+      # Mount source code for hot reload
+      - ./frontend:/app
+      - /app/node_modules
+      - /app/.next
+    command: sh -c "npm install && npm run dev"
+    depends_on:
+      - backend
+    restart: unless-stopped
+    networks:
+      - calbot-network
+
+volumes:
+  backend_cache:
+
+networks:
+  calbot-network:
+    driver: bridge

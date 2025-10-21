@@ -1,0 +1,67 @@
+version: '3.8'
+
+services:
+  # Backend Service
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: calbot-backend
+    ports:
+      - "8000:8000"
+    environment:
+      # Database
+      - SUPABASE_URL=${SUPABASE_URL}
+      - SUPABASE_SERVICE_KEY=${SUPABASE_SERVICE_KEY}
+
+      # Google OAuth
+      - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
+      - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
+      - GOOGLE_REDIRECT_URI=${GOOGLE_REDIRECT_URI:-http://localhost:8000/auth/google/callback}
+
+      # Security
+      - SECRET_KEY=${SECRET_KEY}
+
+      # Claude API
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+
+      # App Config
+      - FRONTEND_URL=${FRONTEND_URL:-http://localhost:3000}
+      - TIMEZONE=${TIMEZONE:-UTC}
+    volumes:
+      - ./backend:/app
+      - backend_cache:/root/.cache
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - calbot-network
+
+  # Frontend Service
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: calbot-frontend
+    ports:
+      - "3000:3000"
+    environment:
+      - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL:-http://localhost:8000}
+      - NODE_ENV=production
+    depends_on:
+      backend:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - calbot-network
+
+volumes:
+  backend_cache:
+
+networks:
+  calbot-network:
+    driver: bridge
