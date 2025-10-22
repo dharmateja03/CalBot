@@ -7,23 +7,19 @@ WORKDIR /app
 # Copy package files
 COPY package*.json ./
 
-# Install ALL dependencies (including devDependencies needed for build)
-RUN npm ci
+# Install dependencies
+RUN npm install
 
 # Stage 2: Builder
 FROM node:18-alpine AS builder
 
 WORKDIR /app
 
-# Copy dependencies from deps stage
-COPY --from=deps /app/node_modules ./node_modules
-
-# Copy application code
+# Copy everything
 COPY . .
 
-# Set environment variables for build
-ENV NEXT_TELEMETRY_DISABLED=1 \
-    NEXT_DISABLE_ESLINT=1
+# Install dependencies again (simpler approach)
+RUN npm install
 
 # Build the application
 RUN npm run build
