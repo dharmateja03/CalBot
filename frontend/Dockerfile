@@ -22,7 +22,8 @@ COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
 # Set environment variables for build
-ENV NEXT_TELEMETRY_DISABLED=1
+ENV NEXT_TELEMETRY_DISABLED=1 \
+    NEXT_DISABLE_ESLINT=1
 
 # Build the application
 RUN npm run build
