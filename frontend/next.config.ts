@@ -1,7 +1,7 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  output: 'standalone', // Required for Docker deployment
+  // Removed standalone mode - it breaks environment variables
   eslint: {
     ignoreDuringBuilds: true, // Skip ESLint during builds
   },
