@@ -44,11 +44,9 @@ COPY --from=builder /app/.next ./.next
 COPY --from=builder /app/public ./public
 COPY --from=builder /app/next.config.ts ./
 
-# Expose port
+# Expose port (Railway will override this)
 EXPOSE 3000
 
-# Set PORT environment variable (Railway compatibility)
-ENV PORT=3000
-
 # Start the application
-CMD ["npm", "start"]
+# Railway will set PORT environment variable automatically
+CMD ["sh", "-c", "npm start -- -p ${PORT:-3000}"]
